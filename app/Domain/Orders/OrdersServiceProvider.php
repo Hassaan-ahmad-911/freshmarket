@@ -2,8 +2,10 @@
 
 namespace App\Domain\Orders;
 
+use App\Domain\Orders\Events\OrderPaid;
 use App\Domain\Orders\Events\SupplierOrderStatusChanged;
 use App\Domain\Orders\Listeners\NotifyCustomerOfStatusChange;
+use App\Domain\Orders\Listeners\SendOrderPaidNotifications;
 use App\Domain\Orders\Models\Order;
 use App\Domain\Orders\Models\SupplierOrder;
 use App\Domain\Orders\Policies\OrderPolicy;
@@ -22,5 +24,6 @@ class OrdersServiceProvider extends ModuleServiceProvider
 
     protected array $listen = [
         SupplierOrderStatusChanged::class => [NotifyCustomerOfStatusChange::class],
+        OrderPaid::class => [SendOrderPaidNotifications::class],
     ];
 }

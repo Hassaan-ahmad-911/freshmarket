@@ -3,9 +3,15 @@
 use App\Domain\Orders\Actions\PlaceOrder;
 use App\Domain\Orders\Models\Order;
 use App\Domain\Orders\Services\DeliveryDetails;
+use App\Domain\Payments\Actions\MarkPaymentSucceeded;
+use App\Domain\Payments\Actions\StartCheckout;
+use App\Domain\Payments\Contracts\PaymentGateway;
+use App\Domain\Payments\Gateways\FakeGateway;
 use App\Domain\Suppliers\Models\Supplier;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 /*
@@ -61,6 +67,58 @@ function camdenStore(?int $commissionBps = null, int $minOrder = 0): Supplier
         'commission_bps' => $commissionBps,
         'min_order_amount' => $minOrder,
     ]);
+}
+
+/** A Camden store with a (fake) Stripe connected account that can receive transfers. */
+function connectedStore(?int $commissionBps = null): Supplier
+{
+    $store = camdenStore($commissionBps);
+    $store->update(['stripe_account_id' => 'acct_test_'.$store->id, 'stripe_details_submitted' => true, 'stripe_transfers_enabled' => true, 'stripe_payouts_enabled' => true]);
+
+    return $store;
+}
+
+/** The FakeGateway the app is using in tests (records every call). */
+function fakeGateway(): FakeGateway
+{
+    return app(PaymentGateway::class);
+}
+
+/** Place an order and confirm its payment, exactly like the webhook would. */
+function paidOrder(array $lines, ?User $customer = null): Order
+{
+    $order = placeOrder($lines, $customer);
+    app(StartCheckout::class)->handle($order);
+    app(MarkPaymentSucceeded::class)->handle($order->id, 'pi_test_'.$order->id, 'ch_test_'.$order->id, $order->total->amount);
+
+    return $order->fresh(['supplierOrders.items', 'supplierOrders.transfer', 'payment']);
+}
+
+/** Build a Stripe event payload. */
+function stripeEvent(string $type, array $object, ?string $id = null): array
+{
+    return [
+        'id' => $id ?? 'evt_'.Str::random(20),
+        'object' => 'event',
+        'type' => $type,
+        'created' => time(),
+        'livemode' => false,
+        'data' => ['object' => $object],
+    ];
+}
+
+/** POST a webhook signed exactly the way Stripe signs it (HMAC-SHA256 of "timestamp.payload"). */
+function postStripeWebhook(array $event, ?string $secret = null): TestResponse
+{
+    $secret ??= config('services.stripe.webhook_secret');
+    $payload = json_encode($event);
+    $timestamp = time();
+    $signature = hash_hmac('sha256', "{$timestamp}.{$payload}", $secret);
+
+    return test()->call('POST', '/stripe/webhook', [], [], [], [
+        'HTTP_STRIPE_SIGNATURE' => "t={$timestamp},v1={$signature}",
+        'CONTENT_TYPE' => 'application/json',
+    ], $payload);
 }
 
 /** A staff member working for the given store. */

@@ -25,6 +25,18 @@ class SupplierPolicy
         return $user->can(Permission::ManageStaff->value) && $supplier->hasMember($user);
     }
 
+    /** Owner only: earnings and payout history. */
+    public function viewEarnings(User $user, Supplier $supplier): bool
+    {
+        return $user->can(Permission::ViewEarnings->value) && $supplier->hasMember($user);
+    }
+
+    /** Owner only: connect / manage the Stripe account money is paid into. */
+    public function managePayouts(User $user, Supplier $supplier): bool
+    {
+        return $user->can(Permission::ManagePayoutAccount->value) && $supplier->hasMember($user);
+    }
+
     /** Admin-only actions. */
     public function approve(User $user, Supplier $supplier): bool
     {

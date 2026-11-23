@@ -4,9 +4,11 @@ namespace Database\Seeders;
 
 use App\Domain\Catalog\Models\Category;
 use App\Domain\Catalog\Models\Product;
+use App\Domain\Payouts\Services\DemoConnectedAccounts;
 use App\Domain\Suppliers\Models\Supplier;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Throwable;
 
 /**
  * Demo marketplace (password for every account: "password").
@@ -45,6 +47,8 @@ class DatabaseSeeder extends Seeder
             'commission_bps' => 1200, // negotiated 12%
         ], ['Camden', 'Soho']);
 
+        $this->connectStripeAccounts([$farm, $bakery]);
+
         $pendingOwner = User::factory()->supplierOwner()->create(['name' => 'Penny Pending', 'email' => 'pending@freshmarket.test']);
         Supplier::factory()->pending()->for($pendingOwner, 'owner')
             ->create(['name' => 'Hilltop Dairy', 'slug' => 'hilltop-dairy', 'description' => 'Small-batch cheese and yoghurt.']);
@@ -71,6 +75,24 @@ class DatabaseSeeder extends Seeder
         $owner = User::factory()->supplierOwner()->create(['name' => $ownerName, 'email' => $email]);
 
         return Supplier::factory()->for($owner, 'owner')->deliveringTo($areas)->create($attributes);
+    }
+
+    /**
+     * With STRIPE_SECRET: real Stripe TEST connected accounts (reused across re-seeds).
+     * Without: fake account ids for the offline FakeGateway.
+     */
+    private function connectStripeAccounts(array $suppliers): void
+    {
+        $accounts = DemoConnectedAccounts::make();
+
+        foreach ($suppliers as $supplier) {
+            try {
+                $accounts->provision($supplier, fn (string $line) => $this->command?->info("  Stripe → {$line}"));
+            } catch (Throwable $e) {
+                $this->command?->warn("  Could not create a Stripe account for {$supplier->name}: {$e->getMessage()}");
+                $this->command?->warn('  Fix the problem above, then run: php artisan stripe:demo-accounts');
+            }
+        }
     }
 
     private function products(Supplier $supplier, array $rows): void

@@ -24,7 +24,10 @@ use Illuminate\Support\Facades\Storage;
  * @property Money $min_order_amount
  */
 #[UseFactory(SupplierFactory::class)]
-#[Fillable(['owner_id', 'name', 'slug', 'description', 'logo_path', 'status', 'min_order_amount', 'commission_bps', 'approved_at', 'suspended_at'])]
+#[Fillable([
+    'owner_id', 'name', 'slug', 'description', 'logo_path', 'status', 'min_order_amount', 'commission_bps', 'approved_at', 'suspended_at',
+    'stripe_account_id', 'stripe_details_submitted', 'stripe_transfers_enabled', 'stripe_payouts_enabled', 'stripe_synced_at',
+])]
 class Supplier extends Model
 {
     use HasFactory;
@@ -37,7 +40,17 @@ class Supplier extends Model
             'commission_bps' => 'integer',
             'approved_at' => 'datetime',
             'suspended_at' => 'datetime',
+            'stripe_details_submitted' => 'boolean',
+            'stripe_transfers_enabled' => 'boolean',
+            'stripe_payouts_enabled' => 'boolean',
+            'stripe_synced_at' => 'datetime',
         ];
+    }
+
+    /** Stripe will accept a transfer to this store's connected account. */
+    public function canReceiveTransfers(): bool
+    {
+        return $this->stripe_account_id !== null && $this->stripe_transfers_enabled;
     }
 
     public function owner(): BelongsTo

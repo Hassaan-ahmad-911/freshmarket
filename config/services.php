@@ -34,6 +34,8 @@ return [
         'key' => env('STRIPE_KEY'),
         'secret' => env('STRIPE_SECRET'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        // Country for new connected accounts (must be one your platform can transfer to).
+        'connect_country' => env('STRIPE_CONNECT_COUNTRY', 'US'),
     ],
 
     'slack' => [

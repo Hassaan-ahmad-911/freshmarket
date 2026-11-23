@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Shop;
 
 use App\Domain\Orders\Models\Order;
+use App\Domain\Payments\Actions\StartCheckout;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
@@ -27,7 +29,15 @@ class OrderController extends Controller
         Gate::authorize('view', $order);
 
         return view('shop.orders.show', [
-            'order' => $order->load(['supplierOrders.supplier', 'supplierOrders.items']),
+            'order' => $order->load(['supplierOrders.supplier', 'supplierOrders.items', 'payment']),
         ]);
+    }
+
+    /** "Pay now" for an order whose payment was cancelled or not finished. */
+    public function pay(Order $order, StartCheckout $startCheckout): RedirectResponse
+    {
+        Gate::authorize('view', $order);
+
+        return redirect()->away($startCheckout->handle($order));
     }
 }

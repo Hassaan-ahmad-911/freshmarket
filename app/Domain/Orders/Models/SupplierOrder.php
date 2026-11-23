@@ -59,4 +59,10 @@ class SupplierOrder extends Model
     {
         return $this->hasMany(OrderItem::class)->orderBy('id');
     }
+
+    /** What the supplier should receive for this sub-order right now. */
+    public function payoutDue(): Money
+    {
+        return $this->payout_amount;
+    }
 }

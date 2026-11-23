@@ -6,10 +6,12 @@ use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Shop\CartController;
 use App\Http\Controllers\Shop\CheckoutController;
+use App\Http\Controllers\Shop\FakeCheckoutController;
 use App\Http\Controllers\Shop\HomeController;
 use App\Http\Controllers\Shop\OrderController;
 use App\Http\Controllers\Shop\ProductController;
 use App\Http\Controllers\Shop\StoreController;
+use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -44,7 +46,17 @@ Route::middleware(['auth', 'verified', 'permission:'.Permission::PlaceOrders->va
 
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::post('/orders/{order}/pay', [OrderController::class, 'pay'])->name('orders.pay');
+
+    // Offline stand-in for Stripe Checkout (404 when real Stripe keys are configured).
+    Route::get('/fake-checkout/{payment}', [FakeCheckoutController::class, 'show'])->name('fake-checkout.show');
+    Route::post('/fake-checkout/{payment}', [FakeCheckoutController::class, 'pay'])->name('fake-checkout.pay');
 });
+
+/*
+| Stripe webhooks (signature-verified, CSRF-exempt — see bootstrap/app.php).
+*/
+Route::post('/stripe/webhook', StripeWebhookController::class)->name('stripe.webhook');
 
 /*
 | Signed-in users.

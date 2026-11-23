@@ -22,6 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Lets routes say ->middleware('role:supplier-owner') etc.
+        // Stripe can't send our CSRF token; its signature check protects this route instead.
+        $middleware->validateCsrfTokens(except: ['stripe/webhook']);
+
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
