@@ -1,5 +1,8 @@
 <?php
 
+use App\Domain\Orders\Actions\PlaceOrder;
+use App\Domain\Orders\Models\Order;
+use App\Domain\Orders\Services\DeliveryDetails;
 use App\Domain\Suppliers\Models\Supplier;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -35,6 +38,29 @@ pest()->extend(TestCase::class)
 function supplierOwner(?Supplier $supplier = null): User
 {
     return ($supplier ?? Supplier::factory()->create())->owner->refresh();
+}
+
+/**
+ * Place an order directly through the PlaceOrder action.
+ *
+ * @param  array<int, int>  $lines  product_id => quantity
+ */
+function placeOrder(array $lines, ?User $customer = null, string $area = 'Camden'): Order
+{
+    return app(PlaceOrder::class)->handle(
+        $customer ?? User::factory()->customer()->create(),
+        $lines,
+        new DeliveryDetails('Casey Customer', '555-0100', '1 High Street', $area),
+    );
+}
+
+/** A store that delivers to Camden with the given commission (basis points). */
+function camdenStore(?int $commissionBps = null, int $minOrder = 0): Supplier
+{
+    return Supplier::factory()->deliveringTo(['Camden'])->create([
+        'commission_bps' => $commissionBps,
+        'min_order_amount' => $minOrder,
+    ]);
 }
 
 /** A staff member working for the given store. */

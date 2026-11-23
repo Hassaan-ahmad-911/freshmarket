@@ -1,9 +1,13 @@
 <?php
 
+use App\Domain\Shared\Enums\Permission;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Shop\CartController;
+use App\Http\Controllers\Shop\CheckoutController;
 use App\Http\Controllers\Shop\HomeController;
+use App\Http\Controllers\Shop\OrderController;
 use App\Http\Controllers\Shop\ProductController;
 use App\Http\Controllers\Shop\StoreController;
 use Illuminate\Support\Facades\Route;
@@ -24,6 +28,23 @@ Route::get('/invitations/{token}', [InvitationController::class, 'show'])->name(
 Route::post('/invitations/{token}', [InvitationController::class, 'accept'])
     ->middleware('throttle:10,1')
     ->name('invitations.accept');
+
+/*
+| Customers: basket, checkout and order history.
+| (`permission:place orders` keeps suppliers and admins out of the buying flow.)
+*/
+Route::middleware(['auth', 'verified', 'permission:'.Permission::PlaceOrders->value])->group(function () {
+    Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+    Route::post('/cart/products/{product}', [CartController::class, 'store'])->name('cart.store');
+    Route::patch('/cart/items/{item}', [CartController::class, 'update'])->name('cart.update');
+    Route::delete('/cart/items/{item}', [CartController::class, 'destroy'])->name('cart.destroy');
+
+    Route::get('/checkout', [CheckoutController::class, 'create'])->name('checkout.create');
+    Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:10,1')->name('checkout.store');
+
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+});
 
 /*
 | Signed-in users.

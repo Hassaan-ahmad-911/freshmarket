@@ -8,6 +8,7 @@
         ],
         $user->isSupplierUser() && $supplier !== null => array_values(array_filter([
             ['Dashboard', route('supplier.dashboard'), 'supplier.dashboard'],
+            ['Orders', route('supplier.orders.index'), 'supplier.orders.*'],
             ['Products', route('supplier.products.index'), 'supplier.products.*'],
             $user->can('update', $supplier) ? ['Store profile', route('supplier.store.edit'), 'supplier.store.*'] : null,
             $user->can('manageStaff', $supplier) ? ['Staff', route('supplier.staff.index'), 'supplier.staff.*'] : null,

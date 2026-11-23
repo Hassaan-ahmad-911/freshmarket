@@ -1,4 +1,4 @@
-@props(['title' => null])
+@props(['title' => null, 'cartCount' => 0])
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
@@ -30,7 +30,17 @@
                 <a href="{{ route('products.index') }}" class="{{ request()->routeIs('products.*') ? 'text-emerald-700' : 'text-gray-600 hover:text-gray-900' }}">Browse</a>
                 <a href="{{ route('stores.index') }}" class="{{ request()->routeIs('stores.*') ? 'text-emerald-700' : 'text-gray-600 hover:text-gray-900' }}">Stores</a>
                 @auth
-                    <a href="{{ route('dashboard') }}" class="text-gray-600 hover:text-gray-900">{{ Auth::user()->isSupplierUser() ? 'My Store' : (Auth::user()->isPlatformAdmin() ? 'Admin' : 'My Account') }}</a>
+                    @if (Auth::user()->isCustomer())
+                        <a href="{{ route('orders.index') }}" class="{{ request()->routeIs('orders.*') ? 'text-emerald-700' : 'text-gray-600 hover:text-gray-900' }}">My orders</a>
+                        <a href="{{ route('cart.index') }}" class="relative inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 {{ request()->routeIs('cart.*') ? 'text-emerald-700 border-emerald-300' : 'text-gray-700 hover:border-gray-300' }}">
+                            🧺 Basket
+                            @if ($cartCount > 0)
+                                <span class="rounded-full bg-emerald-600 px-1.5 text-xs font-semibold text-white">{{ $cartCount }}</span>
+                            @endif
+                        </a>
+                    @else
+                        <a href="{{ route('dashboard') }}" class="text-gray-600 hover:text-gray-900">{{ Auth::user()->isSupplierUser() ? 'My Store' : 'Admin' }}</a>
+                    @endif
                     <form method="POST" action="{{ route('logout') }}">@csrf<button class="text-gray-500 hover:text-gray-900">Log out</button></form>
                 @else
                     <a href="{{ route('supplier.register') }}" class="text-gray-600 hover:text-gray-900">Sell on FreshMarket</a>
@@ -52,7 +62,12 @@
             <a href="{{ route('products.index') }}" class="block">Browse</a>
             <a href="{{ route('stores.index') }}" class="block">Stores</a>
             @auth
-                <a href="{{ route('dashboard') }}" class="block">My account</a>
+                @if (Auth::user()->isCustomer())
+                    <a href="{{ route('cart.index') }}" class="block">Basket ({{ $cartCount }})</a>
+                    <a href="{{ route('orders.index') }}" class="block">My orders</a>
+                @else
+                    <a href="{{ route('dashboard') }}" class="block">My account</a>
+                @endif
                 <form method="POST" action="{{ route('logout') }}">@csrf<button>Log out</button></form>
             @else
                 <a href="{{ route('supplier.register') }}" class="block">Sell on FreshMarket</a>

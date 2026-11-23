@@ -46,14 +46,12 @@ it('sends each role to its own home after login', function (string $state, strin
 
     $response = $this->actingAs($user)->get('/dashboard');
 
-    $expectedRoute === 'dashboard'
-        ? $response->assertOk()->assertSee('My Account')
-        : $response->assertRedirect(route($expectedRoute));
+    $response->assertRedirect(route($expectedRoute));
 })->with([
     'admin' => ['admin', 'admin.home'],
     'supplier owner' => ['supplierOwner', 'supplier.dashboard'],
     'supplier staff' => ['supplierStaff', 'supplier.dashboard'],
-    'customer' => ['customer', 'dashboard'],
+    'customer' => ['customer', 'orders.index'],
 ]);
 
 it('only lets supplier users into the supplier area', function (Closure $makeUser, int $status) {

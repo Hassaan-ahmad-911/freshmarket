@@ -19,6 +19,7 @@ class DashboardController extends Controller
         return match (true) {
             $user->isPlatformAdmin() => redirect()->route('admin.home'),
             $user->isSupplierUser() => redirect()->route('supplier.dashboard'),
+            $user->isCustomer() => redirect()->route('orders.index'),
             default => view('dashboard'),
         };
     }

@@ -48,8 +48,21 @@
                     <div class="mt-6 text-gray-700 leading-relaxed whitespace-pre-line">{{ $product->description }}</div>
                 @endif
 
-                <div class="mt-8 rounded-xl bg-gray-100 p-4 text-sm text-gray-600">
-                    Add to basket arrives with the cart in Phase 3.
+                <div class="mt-8">
+                    @if (! $product->isInStock())
+                        <p class="rounded-xl bg-gray-100 p-4 text-sm text-gray-600">Out of stock — check back soon.</p>
+                    @elseif (auth()->guest())
+                        <a href="{{ route('login') }}" class="inline-block rounded-lg bg-emerald-600 px-5 py-3 font-semibold text-white hover:bg-emerald-700">Log in to add to basket</a>
+                    @elseif (auth()->user()->isCustomer())
+                        <form method="POST" action="{{ route('cart.store', $product) }}" class="flex items-center gap-3">
+                            @csrf
+                            <label for="quantity" class="sr-only">Quantity</label>
+                            <input id="quantity" type="number" name="quantity" value="1" min="1" max="{{ min($product->stock, 99) }}"
+                                   class="w-20 rounded-lg border-gray-300 focus:border-emerald-500 focus:ring-emerald-500">
+                            <button class="rounded-lg bg-emerald-600 px-5 py-3 font-semibold text-white hover:bg-emerald-700">Add to basket</button>
+                        </form>
+                        <x-input-error :messages="$errors->get('quantity')" class="mt-2" />
+                    @endif
                 </div>
 
                 <dl class="mt-6 grid grid-cols-2 gap-4 text-sm">

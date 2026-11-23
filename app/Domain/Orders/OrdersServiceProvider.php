@@ -2,19 +2,25 @@
 
 namespace App\Domain\Orders;
 
+use App\Domain\Orders\Events\SupplierOrderStatusChanged;
+use App\Domain\Orders\Listeners\NotifyCustomerOfStatusChange;
+use App\Domain\Orders\Models\Order;
+use App\Domain\Orders\Models\SupplierOrder;
+use App\Domain\Orders\Policies\OrderPolicy;
+use App\Domain\Orders\Policies\SupplierOrderPolicy;
 use App\Domain\Shared\ModuleServiceProvider;
 
 /**
  * Orders module: Parent orders, per-supplier sub-orders, order items and status changes.
- *
- * Register this module's policies, event listeners and container
- * bindings here, never in AppServiceProvider.
  */
 class OrdersServiceProvider extends ModuleServiceProvider
 {
-    /** @var array<class-string, class-string> */
-    protected array $policies = [];
+    protected array $policies = [
+        Order::class => OrderPolicy::class,
+        SupplierOrder::class => SupplierOrderPolicy::class,
+    ];
 
-    /** @var array<class-string, list<class-string>> */
-    protected array $listen = [];
+    protected array $listen = [
+        SupplierOrderStatusChanged::class => [NotifyCustomerOfStatusChange::class],
+    ];
 }
