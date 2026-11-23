@@ -1,9 +1,16 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "freshmarket/freshmarket",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "FreshMarket: a multi-vendor food marketplace on Laravel with Stripe Connect (separate charges and transfers, partial refunds).",
+    "keywords": [
+        "laravel",
+        "marketplace",
+        "stripe",
+        "stripe-connect",
+        "multi-vendor",
+        "portfolio"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.3",

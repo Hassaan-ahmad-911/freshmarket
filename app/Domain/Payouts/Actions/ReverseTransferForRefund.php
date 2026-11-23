@@ -53,7 +53,7 @@ class ReverseTransferForRefund
                 $reversalId = $this->gateway->reverseTransfer(
                     transferId: $transfer->stripe_transfer_id,
                     amount: $excess->amount,
-                    idempotencyKey: "reversal-refund-{$refund->id}-{$excess->amount}",
+                    idempotencyKey: "reversal-{$transfer->stripe_transfer_id}-refund{$refund->id}-{$excess->amount}",
                     metadata: ['refund_id' => (string) $refund->id, 'supplier_order_number' => $supplierOrder->number],
                 );
             } catch (Throwable $e) {

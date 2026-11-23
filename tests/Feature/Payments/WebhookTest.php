@@ -96,6 +96,35 @@ it('enables a supplier and sends its waiting transfer on account.updated', funct
         ->and($waiting->refresh()->status)->toBe(TransferStatus::Paid);
 });
 
+it('handles Accounts v2 "thin" events: re-reads the account and releases waiting transfers', function () {
+    $this->bakery->update(['stripe_transfers_enabled' => false]);
+    postStripeWebhook($this->succeeded);
+    $waiting = Transfer::where('supplier_id', $this->bakery->id)->sole();
+    expect($waiting->status)->toBe(TransferStatus::Blocked);
+
+    // Thin events carry no account data — only which account changed.
+    postStripeWebhook([
+        'id' => 'evt_thin_1',
+        'object' => 'v2.core.event',
+        'type' => 'v2.core.account[configuration.recipient].capability_status_updated',
+        'created' => now()->toIso8601String(),
+        'related_object' => ['id' => $this->bakery->stripe_account_id, 'type' => 'v2.core.account', 'url' => '/v2/core/accounts/'.$this->bakery->stripe_account_id],
+    ])->assertOk()->assertJson(['status' => 'processed']);
+
+    expect($this->bakery->refresh()->stripe_transfers_enabled)->toBeTrue()   // FakeGateway reports the account active
+        ->and($waiting->refresh()->status)->toBe(TransferStatus::Paid);
+});
+
+it('uses idempotency keys that stay unique after the database is re-seeded', function () {
+    postStripeWebhook($this->succeeded);
+
+    // Keys are built from Stripe ids (globally unique), not just local auto-increment ids,
+    // which restart at 1 after migrate:fresh while Stripe remembers keys for 24 hours.
+    foreach (array_keys(fakeGateway()->transfers) as $key) {
+        expect($key)->toStartWith('transfer-ch_123-so');
+    }
+});
+
 it('records a transfer from transfer.created if our own save was lost', function () {
     $this->bakery->update(['stripe_transfers_enabled' => false]);
     postStripeWebhook($this->succeeded);

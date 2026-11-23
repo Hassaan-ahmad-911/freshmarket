@@ -21,7 +21,6 @@
                         <ul class="mt-2 flex flex-wrap gap-3 text-xs text-gray-600">
                             <li>{{ $supplier->stripe_details_submitted ? '✅' : '⏳' }} Details submitted</li>
                             <li>{{ $supplier->stripe_transfers_enabled ? '✅' : '⏳' }} Transfers enabled</li>
-                            <li>{{ $supplier->stripe_payouts_enabled ? '✅' : '⏳' }} Bank payouts enabled</li>
                         </ul>
                     @endif
                 </div>

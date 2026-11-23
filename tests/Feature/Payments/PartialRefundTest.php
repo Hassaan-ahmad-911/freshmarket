@@ -94,6 +94,13 @@ it('keeps the books balanced: refund = commission returned + supplier reversal',
     expect($refund->amount->amount)->toBe($refund->commission_amount->amount + $refund->reversal_amount->amount);
 });
 
+it('keys refunds and reversals on Stripe ids so re-seeding never replays an old request', function () {
+    $refund = app(IssueRefund::class)->item($this->carrotsLine, 1);
+
+    expect(array_keys(fakeGateway()->refunds))->toBe(["refund-pi_test_{$this->order->id}-{$refund->id}"])
+        ->and(array_key_first(fakeGateway()->reversals))->toStartWith('reversal-'.$this->farmOrder->transfer->stripe_transfer_id);
+});
+
 it('splits a line\'s commission exactly across several partial refunds', function () {
     $store = connectedStore(1250); // 12.5%
     $p = Product::factory()->for($store)->create(['price' => 333, 'stock' => 5]);

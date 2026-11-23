@@ -12,6 +12,7 @@ use App\Domain\Payouts\Listeners\QueueSupplierTransfers;
 use App\Domain\Payouts\Listeners\ReverseSupplierTransfer;
 use App\Domain\Payouts\Models\Transfer;
 use App\Domain\Payouts\Webhooks\AccountUpdated;
+use App\Domain\Payouts\Webhooks\ConnectedAccountChanged;
 use App\Domain\Payouts\Webhooks\TransferCreated;
 use App\Domain\Shared\ModuleServiceProvider;
 
@@ -28,8 +29,11 @@ class PayoutsServiceProvider extends ModuleServiceProvider
     protected function bootModule(): void
     {
         $webhooks = $this->app->make(WebhookHandlerRegistry::class);
-        $webhooks->register('account.updated', AccountUpdated::class);
+        $webhooks->register('account.updated', AccountUpdated::class);   // Accounts v1 (snapshot event)
         $webhooks->register('transfer.created', TransferCreated::class);
+        // Accounts v2 (thin events)
+        $webhooks->register('v2.core.account.updated', ConnectedAccountChanged::class);
+        $webhooks->register('v2.core.account[configuration.recipient].capability_status_updated', ConnectedAccountChanged::class);
 
         // A "dynamic relationship": the Orders module doesn't know transfers exist;
         // this module attaches $supplierOrder->transfer from the outside.

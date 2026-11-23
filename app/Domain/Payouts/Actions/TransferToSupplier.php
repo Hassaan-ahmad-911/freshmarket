@@ -67,9 +67,10 @@ class TransferToSupplier
             return $transfer;
         }
 
-        // The key includes the amount: a retry with the same amount is deduplicated by
-        // Stripe, while a different amount (after a refund) is a genuinely new request.
-        $idempotencyKey = "transfer-supplier-order-{$supplierOrder->id}-{$amount->amount}";
+        // Built from the customer's charge id (unique across every Stripe account and every
+        // database reset) + this sub-order + the amount. A retry with the same amount is
+        // deduplicated by Stripe; a different amount (after a refund) is a genuinely new request.
+        $idempotencyKey = "transfer-{$payment->charge_id}-so{$supplierOrder->id}-{$amount->amount}";
 
         $transfer->update([
             'amount' => $amount,

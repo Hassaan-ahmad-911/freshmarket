@@ -132,15 +132,27 @@ class StripeConnectGateway implements PaymentGateway
         return $reversal->id;
     }
 
+    /**
+     * Connected accounts use Stripe's Accounts v2 API (new platforms can no longer
+     * create v1 accounts). A supplier is a "recipient": it only needs the
+     * stripe_balance.stripe_transfers capability to receive our transfers.
+     * The resulting acct_... id works with the v1 Transfers API as `destination`.
+     */
     public function createConnectedAccount(string $email, string $businessName, array $metadata = []): string
     {
-        $account = $this->stripe->accounts->create([
-            'type' => 'express',
-            'country' => config('services.stripe.connect_country', 'US'),
-            'email' => $email,
-            'business_profile' => ['name' => $businessName],
-            // Separate charges and transfers only needs the "transfers" capability.
-            'capabilities' => ['transfers' => ['requested' => true]],
+        $account = $this->stripe->v2->core->accounts->create([
+            'contact_email' => $email,
+            'display_name' => $businessName,
+            'dashboard' => 'express', // supplier gets the Stripe Express dashboard
+            'identity' => ['country' => config('services.stripe.connect_country', 'US')],
+            'configuration' => [
+                'recipient' => ['capabilities' => ['stripe_balance' => ['stripe_transfers' => ['requested' => true]]]],
+            ],
+            'defaults' => [
+                'currency' => strtolower(config('freshmarket.currency', 'usd')),
+                // Recipient-only accounts: the platform collects fees and covers losses.
+                'responsibilities' => ['fees_collector' => 'application', 'losses_collector' => 'application'],
+            ],
             'metadata' => $metadata,
         ]);
 
@@ -149,16 +161,22 @@ class StripeConnectGateway implements PaymentGateway
 
     public function createOnboardingLink(string $accountId, string $refreshUrl, string $returnUrl): string
     {
-        return $this->stripe->accountLinks->create([
+        return $this->stripe->v2->core->accountLinks->create([
             'account' => $accountId,
-            'refresh_url' => $refreshUrl,
-            'return_url' => $returnUrl,
-            'type' => 'account_onboarding',
+            'use_case' => [
+                'type' => 'account_onboarding',
+                'account_onboarding' => [
+                    'refresh_url' => $refreshUrl,
+                    'return_url' => $returnUrl,
+                ],
+            ],
         ])->url;
     }
 
     public function retrieveAccount(string $accountId): ConnectedAccountStatus
     {
-        return ConnectedAccountStatus::fromStripe($this->stripe->accounts->retrieve($accountId)->toArray());
+        $account = $this->stripe->v2->core->accounts->retrieve($accountId, ['include' => ['configuration.recipient', 'requirements']]);
+
+        return ConnectedAccountStatus::fromStripeV2($account->toArray());
     }
 }

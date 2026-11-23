@@ -31,7 +31,7 @@ use Throwable;
  *   1. RESERVE (DB transaction, rows locked): check limits, add the amounts to
  *      the refunded counters, create a "pending" refund row. Two clicks at the
  *      same moment queue up on the lock; the second sees the updated counters.
- *   2. REFUND at Stripe with idempotency key "refund-{id}".
+ *   2. REFUND at Stripe with idempotency key "refund-{payment_intent}-{id}".
  *   3a. Stripe refused → RELEASE: undo the counters, mark the refund failed.
  *   3b. Stripe accepted → RefundIssued event → transfer reversal, restock, email.
  */
@@ -170,7 +170,9 @@ class IssueRefund
             $result = $this->gateway->refund(
                 paymentIntentId: $refund->payment->payment_intent_id,
                 amount: $refund->amount->amount,
-                idempotencyKey: "refund-{$refund->id}",
+                // PaymentIntent id + refund row: unique even if the database is re-seeded
+                // (local ids restart at 1, but Stripe remembers keys for 24 hours).
+                idempotencyKey: "refund-{$refund->payment->payment_intent_id}-{$refund->id}",
                 metadata: [
                     'refund_id' => (string) $refund->id,
                     'order_number' => $refund->order->number,

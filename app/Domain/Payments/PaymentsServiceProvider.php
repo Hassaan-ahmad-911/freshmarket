@@ -4,6 +4,7 @@ namespace App\Domain\Payments;
 
 use App\Domain\Orders\Models\Order;
 use App\Domain\Orders\Models\SupplierOrder;
+use App\Domain\Payments\Console\StripeListen;
 use App\Domain\Payments\Contracts\PaymentGateway;
 use App\Domain\Payments\Events\RefundIssued;
 use App\Domain\Payments\Gateways\FakeGateway;
@@ -53,6 +54,10 @@ class PaymentsServiceProvider extends ModuleServiceProvider
         $webhooks = $this->app->make(WebhookHandlerRegistry::class);
         $webhooks->register('payment_intent.succeeded', PaymentIntentSucceeded::class);
         $webhooks->register('charge.refunded', ChargeRefunded::class);
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([StripeListen::class]);
+        }
 
         // Attach $order->payment / ->refunds without the Orders module depending on Payments.
         Order::resolveRelationUsing('payment', fn (Order $order) => $order->hasOne(Payment::class));
