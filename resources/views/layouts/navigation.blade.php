@@ -1,3 +1,23 @@
+@php
+    // One list of links per role, used by both the desktop and the mobile menu.
+    $user = Auth::user();
+    $supplier = $user->supplier;
+    $links = match (true) {
+        $user->isPlatformAdmin() => [
+            ['Suppliers', route('admin.home'), 'admin.*'],
+        ],
+        $user->isSupplierUser() && $supplier !== null => array_values(array_filter([
+            ['Dashboard', route('supplier.dashboard'), 'supplier.dashboard'],
+            ['Products', route('supplier.products.index'), 'supplier.products.*'],
+            $user->can('update', $supplier) ? ['Store profile', route('supplier.store.edit'), 'supplier.store.*'] : null,
+            $user->can('manageStaff', $supplier) ? ['Staff', route('supplier.staff.index'), 'supplier.staff.*'] : null,
+        ])),
+        default => [
+            ['My Account', route('dashboard'), 'dashboard'],
+        ],
+    };
+    $links[] = ['Shop', route('products.index'), 'products.*'];
+@endphp
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -5,26 +25,17 @@
             <div class="flex">
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
+                    <a href="{{ route('home') }}" class="flex items-center gap-2">
+                        <x-application-logo class="block h-8 w-8 text-emerald-600" />
+                        <span class="hidden lg:inline font-bold tracking-tight">Fresh<span class="text-emerald-600">Market</span></span>
                     </a>
                 </div>
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    @if (Auth::user()->isPlatformAdmin())
-                        <x-nav-link :href="route('admin.home')" :active="request()->routeIs('admin.*')">
-                            {{ __('Admin') }}
-                        </x-nav-link>
-                    @elseif (Auth::user()->isSupplierUser())
-                        <x-nav-link :href="route('supplier.dashboard')" :active="request()->routeIs('supplier.*')">
-                            {{ __('My Store') }}
-                        </x-nav-link>
-                    @else
-                        <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                            {{ __('My Account') }}
-                        </x-nav-link>
-                    @endif
+                    @foreach ($links as [$label, $href, $pattern])
+                        <x-nav-link :href="$href" :active="request()->routeIs($pattern)">{{ $label }}</x-nav-link>
+                    @endforeach
                 </div>
             </div>
 
@@ -77,19 +88,9 @@
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
-            @if (Auth::user()->isPlatformAdmin())
-                <x-responsive-nav-link :href="route('admin.home')" :active="request()->routeIs('admin.*')">
-                    {{ __('Admin') }}
-                </x-responsive-nav-link>
-            @elseif (Auth::user()->isSupplierUser())
-                <x-responsive-nav-link :href="route('supplier.dashboard')" :active="request()->routeIs('supplier.*')">
-                    {{ __('My Store') }}
-                </x-responsive-nav-link>
-            @else
-                <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                    {{ __('My Account') }}
-                </x-responsive-nav-link>
-            @endif
+            @foreach ($links as [$label, $href, $pattern])
+                <x-responsive-nav-link :href="$href" :active="request()->routeIs($pattern)">{{ $label }}</x-responsive-nav-link>
+            @endforeach
         </div>
 
         <!-- Responsive Settings Options -->

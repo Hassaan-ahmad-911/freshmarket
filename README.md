@@ -36,17 +36,22 @@ npm install && npm run build
 cp .env.example .env          # set DB_* for MySQL, or DB_CONNECTION=sqlite
 php artisan key:generate
 php artisan migrate --seed
+php artisan storage:link      # makes uploaded logos/product images publicly reachable
 composer run dev              # app + queue worker + logs + Vite
 ```
 
+Emails (invitations, approvals, low-stock alerts) are queued and written to
+`storage/logs/laravel.log` (MAIL_MAILER=log). `composer run dev` starts the queue worker.
+
 ## Demo logins (password: `password`)
 
-| Role           | Email                       |
-|----------------|-----------------------------|
-| Platform Admin | admin@freshmarket.test      |
-| Supplier Owner | owner@freshmarket.test      |
-| Supplier Staff | staff@freshmarket.test      |
-| Customer       | customer@freshmarket.test   |
+| Role                    | Email                       | Notes                                   |
+|-------------------------|-----------------------------|-----------------------------------------|
+| Platform Admin          | admin@freshmarket.test      | Approves / suspends suppliers at /admin |
+| Supplier Owner          | owner@freshmarket.test      | Green Valley Farm (approved)            |
+| Supplier Staff          | staff@freshmarket.test      | Green Valley Farm — products only       |
+| Supplier Owner (pending)| pending@freshmarket.test    | Sunrise Bakery, waiting for approval    |
+| Customer                | customer@freshmarket.test   |                                         |
 
 ## Tests
 

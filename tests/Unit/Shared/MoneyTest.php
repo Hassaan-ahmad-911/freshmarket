@@ -47,6 +47,26 @@ it('formats using integer maths', function (int $cents, string $currency, string
     [100, 'jpy', 'JPY 1.00'],
 ]);
 
+it('parses what people type into a form, without floats', function (string $input, int $cents) {
+    expect(Money::fromDecimal($input, 'usd')->amount)->toBe($cents);
+})->with([
+    ['12', 1200],
+    ['12.5', 1250],
+    ['12.50', 1250],
+    ['0.07', 7],
+    [' 3.99 ', 399],
+    ['19.99', 1999], // (int) (19.99 * 100) would give 1998 with floats!
+]);
+
+it('rejects malformed amounts', function (string $input) {
+    Money::fromDecimal($input, 'usd');
+})->throws(InvalidArgumentException::class)->with(['-1', '1.999', 'abc', '1,000', '']);
+
+it('converts back to a form value', function () {
+    expect(Money::of(1250, 'usd')->toDecimal())->toBe('12.50')
+        ->and(Money::of(5, 'usd')->toDecimal())->toBe('0.05');
+});
+
 it('uses the configured default currency', function () {
     config(['freshmarket.currency' => 'gbp']);
 

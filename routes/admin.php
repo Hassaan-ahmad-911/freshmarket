@@ -1,19 +1,23 @@
 <?php
 
 use App\Domain\Shared\Enums\Role;
+use App\Http\Controllers\Admin\SupplierApprovalController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Admin area — TEMPORARY placeholder
+| Admin area — TEMPORARY
 |--------------------------------------------------------------------------
-| In Phase 6 the Filament admin panel takes over /admin and this file is
-| deleted. Until then, admins land on a simple page so login works end-to-end.
+| In Phase 6 the Filament admin panel takes over /admin and this file (plus
+| Admin\SupplierApprovalController and its view) is deleted. Until then,
+| admins get a simple supplier approval screen.
 */
 
 Route::prefix('admin')
     ->name('admin.')
     ->middleware(['auth', 'verified', 'role:'.Role::PlatformAdmin->value])
     ->group(function () {
-        Route::view('/', 'admin.placeholder')->name('home');
+        Route::get('/', [SupplierApprovalController::class, 'index'])->name('home');
+        Route::post('/suppliers/{supplier}/approve', [SupplierApprovalController::class, 'approve'])->name('suppliers.approve');
+        Route::post('/suppliers/{supplier}/suspend', [SupplierApprovalController::class, 'suspend'])->name('suppliers.suspend');
     });

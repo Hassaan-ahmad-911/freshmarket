@@ -3,18 +3,26 @@
 namespace App\Domain\Suppliers;
 
 use App\Domain\Shared\ModuleServiceProvider;
+use App\Domain\Suppliers\Events\SupplierApproved;
+use App\Domain\Suppliers\Events\SupplierRegistered;
+use App\Domain\Suppliers\Events\SupplierSuspended;
+use App\Domain\Suppliers\Listeners\NotifyAdminsOfNewSupplier;
+use App\Domain\Suppliers\Listeners\NotifyOwnerOfStatusChange;
+use App\Domain\Suppliers\Models\Supplier;
+use App\Domain\Suppliers\Policies\SupplierPolicy;
 
 /**
  * Suppliers module: Supplier stores, approval, staff and Stripe Connect onboarding.
- *
- * Register this module's policies, event listeners and container
- * bindings here, never in AppServiceProvider.
  */
 class SuppliersServiceProvider extends ModuleServiceProvider
 {
-    /** @var array<class-string, class-string> */
-    protected array $policies = [];
+    protected array $policies = [
+        Supplier::class => SupplierPolicy::class,
+    ];
 
-    /** @var array<class-string, list<class-string>> */
-    protected array $listen = [];
+    protected array $listen = [
+        SupplierRegistered::class => [NotifyAdminsOfNewSupplier::class],
+        SupplierApproved::class => [NotifyOwnerOfStatusChange::class],
+        SupplierSuspended::class => [NotifyOwnerOfStatusChange::class],
+    ];
 }

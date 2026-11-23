@@ -20,6 +20,9 @@ final readonly class Money implements JsonSerializable, Stringable
 {
     private const SYMBOLS = ['usd' => '$', 'eur' => '€', 'gbp' => '£', 'cad' => 'CA$', 'aud' => 'A$'];
 
+    /** A non-negative amount with up to 2 decimals ("12", "12.5", "12.50"). Shared with form validation. */
+    public const DECIMAL_PATTERN = '/^(\d{1,7})(?:\.(\d{1,2}))?$/';
+
     private function __construct(
         public int $amount,
         public string $currency,
@@ -28,6 +31,23 @@ final readonly class Money implements JsonSerializable, Stringable
     public static function of(int $cents, ?string $currency = null): self
     {
         return new self($cents, strtolower($currency ?? config('freshmarket.currency', 'usd')));
+    }
+
+    /**
+     * Parse what a person types into a form ("12", "12.5", "12.50") into cents
+     * using string maths only — "12.50" never passes through a float.
+     */
+    public static function fromDecimal(string $value, ?string $currency = null): self
+    {
+        $value = trim($value);
+
+        if (! preg_match(self::DECIMAL_PATTERN, $value, $m)) {
+            throw new InvalidArgumentException("[$value] is not a valid money amount.");
+        }
+
+        $cents = (int) $m[1] * 100 + (int) str_pad($m[2] ?? '', 2, '0');
+
+        return self::of($cents, $currency);
     }
 
     public static function zero(?string $currency = null): self
@@ -128,6 +148,14 @@ final readonly class Money implements JsonSerializable, Stringable
         $symbol = self::SYMBOLS[$this->currency] ?? strtoupper($this->currency).' ';
 
         return ($this->amount < 0 ? '-' : '').$symbol.$major.'.'.$minor;
+    }
+
+    /** "1234.50" — the value to put back into a form input. */
+    public function toDecimal(): string
+    {
+        $absolute = abs($this->amount);
+
+        return ($this->amount < 0 ? '-' : '').intdiv($absolute, 100).'.'.str_pad((string) ($absolute % 100), 2, '0', STR_PAD_LEFT);
     }
 
     public function __toString(): string

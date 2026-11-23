@@ -2,6 +2,7 @@
 
 use App\Domain\Shared\Enums\Permission;
 use App\Domain\Shared\Enums\Role;
+use App\Domain\Suppliers\Models\Supplier;
 use App\Models\User;
 
 it('seeds every role and permission defined in the enums', function () {
@@ -55,15 +56,16 @@ it('sends each role to its own home after login', function (string $state, strin
     'customer' => ['customer', 'dashboard'],
 ]);
 
-it('only lets supplier users into the supplier area', function (string $state, int $status) {
-    $this->actingAs(User::factory()->{$state}()->create())
+it('only lets supplier users into the supplier area', function (Closure $makeUser, int $status) {
+    $this->actingAs($makeUser())
         ->get(route('supplier.dashboard'))
         ->assertStatus($status);
 })->with([
-    'owner allowed' => ['supplierOwner', 200],
-    'staff allowed' => ['supplierStaff', 200],
-    'customer blocked' => ['customer', 403],
-    'admin blocked' => ['admin', 403],
+    'owner allowed' => [fn () => supplierOwner(), 200],
+    'staff allowed' => [fn () => supplierStaff(Supplier::factory()->create()), 200],
+    'customer blocked' => [fn () => User::factory()->customer()->create(), 403],
+    'admin blocked' => [fn () => User::factory()->admin()->create(), 403],
+    'supplier role without a store blocked' => [fn () => User::factory()->supplierOwner()->create(), 403],
 ]);
 
 it('only lets platform admins into the admin area', function (string $state, int $status) {
