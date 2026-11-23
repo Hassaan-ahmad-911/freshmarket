@@ -50,23 +50,37 @@ class DatabaseSeeder extends Seeder
         $this->connectStripeAccounts([$farm, $bakery]);
 
         $pendingOwner = User::factory()->supplierOwner()->create(['name' => 'Penny Pending', 'email' => 'pending@freshmarket.test']);
-        Supplier::factory()->pending()->for($pendingOwner, 'owner')
-            ->create(['name' => 'Hilltop Dairy', 'slug' => 'hilltop-dairy', 'description' => 'Small-batch cheese and yoghurt.']);
+        $dairy = Supplier::factory()->pending()->for($pendingOwner, 'owner')
+            ->deliveringTo(['Camden', 'Islington'])
+            ->create(['name' => 'Hilltop Dairy', 'slug' => 'hilltop-dairy', 'description' => 'Small-batch cheese, yoghurt and milk from our own herd.']);
+
+        // Photos: free-licence images from Wikimedia Commons (see docs/IMAGE_CREDITS.md).
+        DemoImages::categories();
+        foreach ([$farm, $bakery, $dairy] as $supplier) {
+            DemoImages::supplier($supplier);
+        }
 
         $this->products($farm, [
-            ['Heirloom Tomatoes', 'fruit-veg', 450, 'kg', 40],
-            ['Rainbow Carrots', 'fruit-veg', 275, 'bunch', 25],
-            ['Honeycrisp Apples', 'fruit-veg', 380, 'kg', 3],          // low stock
-            ['Free-Range Eggs', 'dairy-eggs', 420, 'dozen', 30],
-            ['Wildflower Honey', 'pantry', 899, '340 g jar', 12],
-            ['Cold-Pressed Apple Juice', 'drinks', 525, '1 L', 0],     // out of stock
+            ['Heirloom Tomatoes', 'fruit-veg', 450, 'kg', 40, 'heirloom-tomatoes', 'Sweet, juicy heritage varieties in every colour, picked ripe this morning.'],
+            ['Rainbow Carrots', 'fruit-veg', 275, 'bunch', 25, 'rainbow-carrots', 'Crunchy carrots with their tops on, grown in our sandy loam.'],
+            ['Honeycrisp Apples', 'fruit-veg', 380, 'kg', 3, 'honeycrisp-apples', 'Crisp, explosively juicy apples with a honeyed finish.'],          // low stock
+            ['Free-Range Eggs', 'dairy-eggs', 420, 'dozen', 30, 'free-range-eggs', 'From hens that roam our orchard all day. Rich, golden yolks.'],
+            ['Wildflower Honey', 'pantry', 899, '340 g jar', 12, 'wildflower-honey', 'Raw honey from our hives at the edge of the wildflower meadow.'],
+            ['Cold-Pressed Apple Juice', 'drinks', 525, '1 L', 0, 'apple-juice', 'Pressed from a blend of our own apples. Nothing added.'],     // out of stock
         ]);
 
         $this->products($bakery, [
-            ['Country Sourdough', 'bakery', 650, 'loaf', 20],
-            ['Butter Croissant', 'bakery', 325, 'each', 40],
-            ['Cinnamon Buns', 'bakery', 1100, 'box of 4', 15],
-            ['Seeded Rye', 'bakery', 575, 'loaf', 10],
+            ['Country Sourdough', 'bakery', 650, 'loaf', 20, 'country-sourdough', 'Naturally leavened for 36 hours, with a blistered, crackling crust.'],
+            ['Butter Croissant', 'bakery', 325, 'each', 40, 'butter-croissant', 'Laminated by hand with cultured butter. Shatteringly flaky.'],
+            ['Cinnamon Buns', 'bakery', 1100, 'box of 4', 15, 'cinnamon-buns', 'Soft, swirled buns with a vanilla glaze. Best warm.'],
+            ['Seeded Rye', 'bakery', 575, 'loaf', 10, 'seeded-rye', 'Dense, tangy rye packed with sunflower and pumpkin seeds.'],
+        ]);
+
+        // Hilltop Dairy is still pending: its products appear once an admin approves the store.
+        $this->products($dairy, [
+            ['Aged Cheddar', 'dairy-eggs', 790, '250 g', 18, 'aged-cheddar', 'Cave-aged for 18 months: crumbly, nutty and sharp.'],
+            ['Greek Yoghurt', 'dairy-eggs', 450, '500 g', 24, 'greek-yoghurt', 'Thick, strained yoghurt made with whole milk.'],
+            ['Whole Milk', 'dairy-eggs', 180, '1 L', 30, 'whole-milk', 'Gently pasteurised, never homogenised. Shake before pouring.'],
         ]);
     }
 
@@ -99,14 +113,17 @@ class DatabaseSeeder extends Seeder
     {
         $categories = Category::pluck('id', 'slug');
 
-        foreach ($rows as [$name, $category, $price, $unit, $stock]) {
-            Product::factory()->for($supplier)->create([
+        foreach ($rows as [$name, $category, $price, $unit, $stock, $image, $description]) {
+            $product = Product::factory()->for($supplier)->create([
                 'name' => $name,
                 'category_id' => $categories[$category],
                 'price' => $price,
                 'unit' => $unit,
                 'stock' => $stock,
+                'description' => $description,
             ]);
+
+            DemoImages::product($product, $image);
         }
     }
 }

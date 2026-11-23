@@ -29,6 +29,22 @@ reversals. Verified end to end against Stripe test mode.
   once per line, so refunds reverse exactly what was charged.
 - **Runs without Stripe.** With no keys configured, a `FakeGateway` stands in. The whole app works
   offline and the test suite never touches the network.
+- **Polished, responsive UI.** A Tailwind design system (Inter, a green brand palette, soft shadows),
+  real food photography, scroll-reveal and hover animations, a fly-to-basket effect, toast
+  notifications, skeleton loaders, animated status pills and count-up stats. It's all lightweight
+  (Alpine.js) and switched off under `prefers-reduced-motion`.
+
+## Screenshots
+
+| Home | Product |
+|---|---|
+| ![Home page](docs/screenshots/home.jpg) | ![Product page](docs/screenshots/product.jpg) |
+| **Catalogue with filters** | **Supplier store** |
+| ![Catalogue](docs/screenshots/products.jpg) | ![Store page](docs/screenshots/store.jpg) |
+| **Basket grouped by supplier** | **Supplier dashboard** |
+| ![Basket](docs/screenshots/cart.jpg) | ![Supplier dashboard](docs/screenshots/dashboard.jpg) |
+
+Photos are free-licence images from Wikimedia Commons; see [docs/IMAGE_CREDITS.md](docs/IMAGE_CREDITS.md).
 
 ## Stack
 
@@ -205,4 +221,4 @@ rules (for example, the domain layer may not depend on HTTP). Tests always use t
 ## Roadmap
 
 - Filament admin panel: GMV dashboard, supplier management, refunds and payment logs
-- Full seed data with product images, UI polish, ER diagram and screenshots
+- ER diagram of the data model

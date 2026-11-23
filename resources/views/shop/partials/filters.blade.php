@@ -1,29 +1,40 @@
 {{-- Search + filter form, shared by the catalogue and store pages. Expects $categories and $action. --}}
-<form method="GET" action="{{ $action }}" class="space-y-5 rounded-xl bg-white border border-gray-200 p-4">
-    <div>
-        <label for="q" class="block text-sm font-medium text-gray-700">Search</label>
-        <input id="q" type="search" name="q" value="{{ request('q') }}" placeholder="e.g. apples"
-               class="mt-1 w-full rounded-md border-gray-300 text-sm focus:border-emerald-500 focus:ring-emerald-500">
+<form method="GET" action="{{ $action }}" class="card space-y-5 p-5 lg:sticky lg:top-24">
+    <div class="flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-ink">Filters</h2>
+        <a href="{{ $action }}" class="text-xs font-medium text-stone-500 hover:text-brand-700">Reset</a>
     </div>
 
     <div>
-        <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
-        <select id="category" name="category" class="mt-1 w-full rounded-md border-gray-300 text-sm focus:border-emerald-500 focus:ring-emerald-500">
-            <option value="">All categories</option>
-            @foreach ($categories as $category)
-                <option value="{{ $category->slug }}" @selected(request('category') === $category->slug)>{{ $category->icon }} {{ $category->name }}</option>
-            @endforeach
-        </select>
+        <label for="q" class="label">Search</label>
+        <div class="relative mt-1.5">
+            <x-icon name="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+            <input id="q" type="search" name="q" value="{{ request('q') }}" placeholder="Search products" class="input pl-9">
+        </div>
     </div>
 
     <fieldset>
-        <legend class="block text-sm font-medium text-gray-700">Price ($)</legend>
-        <div class="mt-1 flex items-center gap-2">
-            <input type="text" inputmode="decimal" name="min_price" value="{{ request('min_price') }}" placeholder="Min" aria-label="Minimum price"
-                   class="w-full rounded-md border-gray-300 text-sm focus:border-emerald-500 focus:ring-emerald-500">
-            <span class="text-gray-400">–</span>
-            <input type="text" inputmode="decimal" name="max_price" value="{{ request('max_price') }}" placeholder="Max" aria-label="Maximum price"
-                   class="w-full rounded-md border-gray-300 text-sm focus:border-emerald-500 focus:ring-emerald-500">
+        <legend class="label">Category</legend>
+        <div class="mt-2 flex flex-wrap gap-2">
+            <label class="cursor-pointer">
+                <input type="radio" name="category" value="" class="peer sr-only" @checked(! request('category'))>
+                <span class="inline-block rounded-full border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 transition peer-checked:border-brand-600 peer-checked:bg-brand-600 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 hover:border-stone-300">All</span>
+            </label>
+            @foreach ($categories as $category)
+                <label class="cursor-pointer">
+                    <input type="radio" name="category" value="{{ $category->slug }}" class="peer sr-only" @checked(request('category') === $category->slug)>
+                    <span class="inline-block rounded-full border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 transition peer-checked:border-brand-600 peer-checked:bg-brand-600 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 hover:border-stone-300">{{ $category->name }}</span>
+                </label>
+            @endforeach
+        </div>
+    </fieldset>
+
+    <fieldset>
+        <legend class="label">Price ($)</legend>
+        <div class="mt-1.5 flex items-center gap-2">
+            <input type="text" inputmode="decimal" name="min_price" value="{{ request('min_price') }}" placeholder="Min" aria-label="Minimum price" class="input">
+            <span class="text-stone-400">–</span>
+            <input type="text" inputmode="decimal" name="max_price" value="{{ request('max_price') }}" placeholder="Max" aria-label="Maximum price" class="input">
         </div>
         <x-input-error :messages="$errors->get('min_price')" class="mt-1" />
         <x-input-error :messages="$errors->get('max_price')" class="mt-1" />
@@ -31,28 +42,27 @@
 
     @unless ($hideArea ?? false)
         <div>
-            <label for="area" class="block text-sm font-medium text-gray-700">Delivers to</label>
-            <input id="area" type="text" name="area" value="{{ request('area') }}" placeholder="Your town or district"
-                   class="mt-1 w-full rounded-md border-gray-300 text-sm focus:border-emerald-500 focus:ring-emerald-500">
+            <label for="area" class="label">Delivers to</label>
+            <div class="relative mt-1.5">
+                <x-icon name="map-pin" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+                <input id="area" type="text" name="area" value="{{ request('area') }}" placeholder="Your town or district" class="input pl-9">
+            </div>
         </div>
     @endunless
 
     <div>
-        <label for="sort" class="block text-sm font-medium text-gray-700">Sort by</label>
-        <select id="sort" name="sort" class="mt-1 w-full rounded-md border-gray-300 text-sm focus:border-emerald-500 focus:ring-emerald-500">
+        <label for="sort" class="label">Sort by</label>
+        <select id="sort" name="sort" class="input mt-1.5">
             @foreach (['newest' => 'Newest', 'price_asc' => 'Price: low to high', 'price_desc' => 'Price: high to low', 'name' => 'Name'] as $value => $label)
                 <option value="{{ $value }}" @selected(request('sort', 'newest') === $value)>{{ $label }}</option>
             @endforeach
         </select>
     </div>
 
-    <label class="flex items-center gap-2 text-sm">
-        <input type="checkbox" name="in_stock" value="1" @checked(request('in_stock')) class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
+    <label class="flex items-center gap-2.5 text-sm text-stone-700">
+        <input type="checkbox" name="in_stock" value="1" @checked(request('in_stock')) class="h-4 w-4 rounded border-stone-300 text-brand-600 focus:ring-brand-500">
         In stock only
     </label>
 
-    <div class="flex gap-2">
-        <button class="flex-1 rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700">Apply</button>
-        <a href="{{ $action }}" class="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">Reset</a>
-    </div>
+    <button class="btn-primary w-full">Apply filters</button>
 </form>

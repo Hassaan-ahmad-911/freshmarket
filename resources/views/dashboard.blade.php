@@ -1,20 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('My Account') }}
-        </h2>
+        <h2 class="text-2xl font-extrabold tracking-tight text-ink">{{ __('My Account') }}</h2>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
-                    <p class="font-medium">Welcome, {{ Auth::user()->name }}!</p>
-                    <p class="mt-2 text-sm text-gray-600">
-                        Your order history will appear here once checkout is built (Phase 3).
-                    </p>
-                </div>
-            </div>
-        </div>
+    <div class="container-page pb-12 pt-6">
+        <x-empty-state icon="home" :title="'Welcome, '.Auth::user()->name.'!'" text="Your account is ready. Browse fresh food from independent local suppliers.">
+            <a href="{{ route('products.index') }}" class="btn-primary rounded-full px-6">Browse products</a>
+        </x-empty-state>
     </div>
 </x-app-layout>
