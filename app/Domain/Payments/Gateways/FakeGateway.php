@@ -31,6 +31,9 @@ class FakeGateway implements PaymentGateway
     /** Destination accounts whose transfers should fail (to test error handling). */
     public array $failingDestinations = [];
 
+    /** Make every refund fail (to test that totals are restored). */
+    public bool $failRefunds = false;
+
     public function name(): string
     {
         return 'fake';
@@ -76,6 +79,10 @@ class FakeGateway implements PaymentGateway
 
     public function refund(string $paymentIntentId, int $amount, string $idempotencyKey, array $metadata = []): GatewayRefund
     {
+        if ($this->failRefunds) {
+            throw new RuntimeException('Fake refund declined.');
+        }
+
         $this->refunds[$idempotencyKey] ??= [
             'id' => 're_fake_'.Str::random(14),
             'payment_intent' => $paymentIntentId,

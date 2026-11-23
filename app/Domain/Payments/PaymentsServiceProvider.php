@@ -3,10 +3,16 @@
 namespace App\Domain\Payments;
 
 use App\Domain\Orders\Models\Order;
+use App\Domain\Orders\Models\SupplierOrder;
 use App\Domain\Payments\Contracts\PaymentGateway;
+use App\Domain\Payments\Events\RefundIssued;
 use App\Domain\Payments\Gateways\FakeGateway;
 use App\Domain\Payments\Gateways\StripeConnectGateway;
+use App\Domain\Payments\Listeners\RestockRefundedItems;
+use App\Domain\Payments\Listeners\SendRefundNotification;
 use App\Domain\Payments\Models\Payment;
+use App\Domain\Payments\Models\Refund;
+use App\Domain\Payments\Webhooks\Handlers\ChargeRefunded;
 use App\Domain\Payments\Webhooks\Handlers\PaymentIntentSucceeded;
 use App\Domain\Payments\Webhooks\StripeSignatureVerifier;
 use App\Domain\Payments\Webhooks\WebhookHandlerRegistry;
@@ -18,6 +24,10 @@ use Stripe\StripeClient;
  */
 class PaymentsServiceProvider extends ModuleServiceProvider
 {
+    protected array $listen = [
+        RefundIssued::class => [RestockRefundedItems::class, SendRefundNotification::class],
+    ];
+
     public function register(): void
     {
         // Real Stripe when a secret key is configured, otherwise the offline fake.
@@ -40,10 +50,13 @@ class PaymentsServiceProvider extends ModuleServiceProvider
 
     protected function bootModule(): void
     {
-        $this->app->make(WebhookHandlerRegistry::class)
-            ->register('payment_intent.succeeded', PaymentIntentSucceeded::class);
+        $webhooks = $this->app->make(WebhookHandlerRegistry::class);
+        $webhooks->register('payment_intent.succeeded', PaymentIntentSucceeded::class);
+        $webhooks->register('charge.refunded', ChargeRefunded::class);
 
-        // Attach $order->payment without the Orders module depending on Payments.
+        // Attach $order->payment / ->refunds without the Orders module depending on Payments.
         Order::resolveRelationUsing('payment', fn (Order $order) => $order->hasOne(Payment::class));
+        Order::resolveRelationUsing('refunds', fn (Order $order) => $order->hasMany(Refund::class)->latest('id'));
+        SupplierOrder::resolveRelationUsing('refunds', fn (SupplierOrder $so) => $so->hasMany(Refund::class)->latest('id'));
     }
 }

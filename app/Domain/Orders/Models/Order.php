@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable([
     'number', 'user_id', 'status', 'currency', 'subtotal', 'delivery_total', 'total', 'commission_total',
     'delivery_name', 'delivery_phone', 'delivery_address', 'delivery_area', 'delivery_notes', 'paid_at', 'cancelled_at',
+    'refunded_total',
 ])]
 class Order extends Model
 {
@@ -34,6 +35,7 @@ class Order extends Model
             'delivery_total' => MoneyCast::class,
             'total' => MoneyCast::class,
             'commission_total' => MoneyCast::class,
+            'refunded_total' => MoneyCast::class,
             'paid_at' => 'datetime',
             'cancelled_at' => 'datetime',
         ];

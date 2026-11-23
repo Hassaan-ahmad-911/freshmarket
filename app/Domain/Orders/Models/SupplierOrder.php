@@ -28,6 +28,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable([
     'number', 'order_id', 'supplier_id', 'status', 'commission_bps',
     'subtotal', 'delivery_fee', 'total', 'commission', 'payout_amount', 'cancelled_at',
+    'refunded_amount', 'refunded_commission', 'delivery_refunded',
 ])]
 class SupplierOrder extends Model
 {
@@ -41,8 +42,29 @@ class SupplierOrder extends Model
             'total' => MoneyCast::class,
             'commission' => MoneyCast::class,
             'payout_amount' => MoneyCast::class,
+            'refunded_amount' => MoneyCast::class,
+            'refunded_commission' => MoneyCast::class,
+            'delivery_refunded' => 'boolean',
             'cancelled_at' => 'datetime',
         ];
+    }
+
+    /** What the customer has paid for this sub-order after refunds. */
+    public function netTotal(): Money
+    {
+        return $this->total->subtract($this->refunded_amount);
+    }
+
+    /** The platform's commission after refunds. */
+    public function netCommission(): Money
+    {
+        return $this->commission->subtract($this->refunded_commission);
+    }
+
+    /** What is left to refund on this sub-order. */
+    public function refundableAmount(): Money
+    {
+        return $this->netTotal();
     }
 
     public function order(): BelongsTo
@@ -60,9 +82,12 @@ class SupplierOrder extends Model
         return $this->hasMany(OrderItem::class)->orderBy('id');
     }
 
-    /** What the supplier should receive for this sub-order right now. */
+    /**
+     * What the supplier should end up with for this sub-order right now:
+     * the original payout minus the supplier's part of every refund.
+     */
     public function payoutDue(): Money
     {
-        return $this->payout_amount;
+        return $this->netTotal()->subtract($this->netCommission());
     }
 }

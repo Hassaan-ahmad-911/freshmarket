@@ -107,7 +107,9 @@ class DemoConnectedAccounts
                 'routing_number' => '110000000',                               // Stripe test bank
                 'account_number' => '000123456789',
             ],
-            'tos_acceptance' => ['date' => time(), 'ip' => '127.0.0.1'],
+            // A real platform records the supplier's own IP when they accept the terms;
+            // a seeder has none, so a public placeholder address is used for the test account.
+            'tos_acceptance' => ['date' => time(), 'ip' => '8.8.8.8'],
             // Manual payouts: transferred money stays visible in the account's balance for the demo.
             'settings' => ['payouts' => ['schedule' => ['interval' => 'manual']]],
             'metadata' => ['supplier_slug' => $supplier->slug, 'freshmarket_demo' => 'true'],

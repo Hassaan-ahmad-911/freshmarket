@@ -23,4 +23,10 @@ class SupplierOrderPolicy
     {
         return $this->view($user, $supplierOrder);
     }
+
+    /** Refund items / cancel: the store's own team, or a platform admin. */
+    public function refund(User $user, SupplierOrder $supplierOrder): bool
+    {
+        return $this->view($user, $supplierOrder) || $user->can(Permission::IssueRefunds->value);
+    }
 }

@@ -4,10 +4,12 @@ namespace App\Domain\Payouts;
 
 use App\Domain\Orders\Events\OrderPaid;
 use App\Domain\Orders\Models\SupplierOrder;
+use App\Domain\Payments\Events\RefundIssued;
 use App\Domain\Payments\Webhooks\WebhookHandlerRegistry;
 use App\Domain\Payouts\Console\ProvisionDemoAccounts;
 use App\Domain\Payouts\Console\RetryTransfers;
 use App\Domain\Payouts\Listeners\QueueSupplierTransfers;
+use App\Domain\Payouts\Listeners\ReverseSupplierTransfer;
 use App\Domain\Payouts\Models\Transfer;
 use App\Domain\Payouts\Webhooks\AccountUpdated;
 use App\Domain\Payouts\Webhooks\TransferCreated;
@@ -20,6 +22,7 @@ class PayoutsServiceProvider extends ModuleServiceProvider
 {
     protected array $listen = [
         OrderPaid::class => [QueueSupplierTransfers::class],
+        RefundIssued::class => [ReverseSupplierTransfer::class],
     ];
 
     protected function bootModule(): void

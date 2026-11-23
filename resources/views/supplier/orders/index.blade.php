@@ -35,7 +35,7 @@
                                 <td class="px-4 py-3 text-gray-600">{{ $so->order->delivery_name }} · {{ $so->order->delivery_area }}</td>
                                 <td class="px-4 py-3 text-right">{{ $so->items_count }}</td>
                                 <td class="px-4 py-3 text-right">{{ $so->total }}</td>
-                                <td class="px-4 py-3 text-right">{{ $so->payout_amount }}</td>
+                                <td class="px-4 py-3 text-right">{{ $so->payoutDue() }}</td>
                                 <td class="px-4 py-3"><x-status-badge :status="$so->status" /></td>
                             </tr>
                         @empty

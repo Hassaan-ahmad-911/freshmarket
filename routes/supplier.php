@@ -51,6 +51,8 @@ Route::prefix('supplier')
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/{supplierOrder}', [OrderController::class, 'show'])->name('orders.show');
         Route::patch('/orders/{supplierOrder}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
+        Route::post('/orders/{supplierOrder}/items/{item}/refund', [OrderController::class, 'refundItem'])->name('orders.items.refund');
+        Route::post('/orders/{supplierOrder}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
 
         Route::get('/payouts', [PayoutsController::class, 'index'])->name('payouts.index');
         Route::post('/payouts/connect', [PayoutsController::class, 'connect'])->name('payouts.connect');

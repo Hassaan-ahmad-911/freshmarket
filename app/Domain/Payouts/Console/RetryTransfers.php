@@ -2,6 +2,8 @@
 
 namespace App\Domain\Payouts\Console;
 
+use App\Domain\Payments\Models\Refund;
+use App\Domain\Payouts\Actions\ReverseTransferForRefund;
 use App\Domain\Payouts\Actions\TransferToSupplier;
 use App\Domain\Payouts\Enums\TransferStatus;
 use App\Domain\Payouts\Models\Transfer;
@@ -12,9 +14,9 @@ class RetryTransfers extends Command
 {
     protected $signature = 'payouts:retry';
 
-    protected $description = 'Retry supplier transfers that are blocked or failed';
+    protected $description = 'Retry supplier transfers and refund reversals that are blocked or failed';
 
-    public function handle(TransferToSupplier $transferToSupplier): int
+    public function handle(TransferToSupplier $transferToSupplier, ReverseTransferForRefund $reverse): int
     {
         $transfers = Transfer::whereIn('status', [TransferStatus::Blocked, TransferStatus::Failed, TransferStatus::Pending])
             ->with(['supplierOrder', 'payment', 'supplier'])
@@ -23,13 +25,20 @@ class RetryTransfers extends Command
         foreach ($transfers as $transfer) {
             try {
                 $result = $transferToSupplier->handle($transfer->supplierOrder, $transfer->payment);
-                $this->line("{$transfer->supplierOrder->number} → {$result->status->label()} {$result->stripe_transfer_id}");
+                $this->line("Transfer {$transfer->supplierOrder->number} → {$result->status->label()} {$result->stripe_transfer_id}");
             } catch (Throwable $e) {
-                $this->error("{$transfer->supplierOrder->number}: {$e->getMessage()}");
+                $this->error("Transfer {$transfer->supplierOrder->number}: {$e->getMessage()}");
             }
         }
 
-        $this->info("Checked {$transfers->count()} transfer(s).");
+        $reversals = Refund::where('reversal_status', 'failed')->get();
+
+        foreach ($reversals as $refund) {
+            $result = $reverse->handle($refund);
+            $this->line("Reversal for refund #{$refund->id} → {$result->reversal_status}");
+        }
+
+        $this->info("Checked {$transfers->count()} transfer(s) and {$reversals->count()} reversal(s).");
 
         return self::SUCCESS;
     }
